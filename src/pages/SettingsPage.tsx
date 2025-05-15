@@ -43,15 +43,21 @@ import {
   Calendar,
   Settings2,
   FileJson,
+  Moon,
+  Sun,
+  Database
 } from "lucide-react";
+import { useLocalStorage } from "@/hooks/use-local-storage";
 
 const SettingsPage = () => {
   const { settings, updateSettings, resetProgress } = useStore();
+  const [theme, setTheme] = useLocalStorage<"light" | "dark">("theme", "light");
   const [formData, setFormData] = useState({
     userName: "",
     dailyCardLimit: 20,
     newCardLimit: 10,
     reminderTime: "19:00",
+    dataRetentionDays: 15
   });
   
   // Initialize form with current settings
@@ -61,6 +67,7 @@ const SettingsPage = () => {
       dailyCardLimit: settings.dailyCardLimit,
       newCardLimit: settings.newCardLimit,
       reminderTime: settings.reminderTime,
+      dataRetentionDays: settings.dataRetentionDays || 15
     });
   }, [settings]);
   
@@ -78,6 +85,7 @@ const SettingsPage = () => {
         dailyCardLimit: Number(formData.dailyCardLimit),
         newCardLimit: Number(formData.newCardLimit),
         reminderTime: formData.reminderTime,
+        dataRetentionDays: Number(formData.dataRetentionDays)
       });
       
       toast.success("Settings updated successfully");
@@ -85,6 +93,16 @@ const SettingsPage = () => {
       toast.error("Failed to update settings");
       console.error(error);
     }
+  };
+  
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    
+    // Update document classes
+    const root = window.document.documentElement;
+    root.classList.remove("light", "dark");
+    root.classList.add(newTheme);
   };
   
   // Handle data export
@@ -154,32 +172,33 @@ const SettingsPage = () => {
     <Layout>
       <div className="flex flex-col gap-6 max-w-2xl mx-auto">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+          <h1 className="text-2xl font-bold tracking-tight dark:text-white">Settings</h1>
           <p className="text-muted-foreground">
             Customize your flashcard experience
           </p>
         </div>
         
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <form onSubmit={handleSubmit}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 dark:text-white">
                 <User className="h-5 w-5 text-brand-purple" />
                 User Settings
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="dark:text-gray-400">
                 Personalize your account information
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-1">
-                <Label htmlFor="userName">Your Name</Label>
+                <Label htmlFor="userName" className="dark:text-white">Your Name</Label>
                 <Input
                   id="userName"
                   name="userName"
                   placeholder="Enter your name"
                   value={formData.userName}
                   onChange={handleChange}
+                  className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 />
               </div>
             </CardContent>
@@ -192,27 +211,64 @@ const SettingsPage = () => {
           </form>
         </Card>
         
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 dark:text-white">
+              <Moon className="h-5 w-5 text-brand-purple" />
+              Appearance
+            </CardTitle>
+            <CardDescription className="dark:text-gray-400">
+              Change how FlashMaster looks
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col gap-4">
+              <Label className="dark:text-white">Theme</Label>
+              <div className="flex gap-4">
+                <Button
+                  type="button"
+                  variant={theme === "light" ? "default" : "outline"}
+                  className={`flex items-center gap-2 ${theme === "light" ? "bg-brand-purple hover:bg-brand-purple/90" : "dark:bg-gray-700 dark:text-white"}`}
+                  onClick={() => theme !== "light" && toggleTheme()}
+                >
+                  <Sun className="h-4 w-4" />
+                  Light
+                </Button>
+                <Button
+                  type="button"
+                  variant={theme === "dark" ? "default" : "outline"}
+                  className={`flex items-center gap-2 ${theme === "dark" ? "bg-brand-purple hover:bg-brand-purple/90" : "dark:bg-gray-700 dark:text-white"}`}
+                  onClick={() => theme !== "dark" && toggleTheme()}
+                >
+                  <Moon className="h-4 w-4" />
+                  Dark
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 dark:text-white">
               <Settings2 className="h-5 w-5 text-brand-purple" />
               Study Preferences
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="dark:text-gray-400">
               Configure your learning session settings
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-1">
-              <Label htmlFor="dailyCardLimit">Daily Card Limit</Label>
+              <Label htmlFor="dailyCardLimit" className="dark:text-white">Daily Card Limit</Label>
               <Select 
                 value={formData.dailyCardLimit.toString()} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, dailyCardLimit: parseInt(value) }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                   <SelectValue placeholder="Select daily limit" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
                   <SelectItem value="10">10 cards per day</SelectItem>
                   <SelectItem value="20">20 cards per day</SelectItem>
                   <SelectItem value="30">30 cards per day</SelectItem>
@@ -220,21 +276,21 @@ const SettingsPage = () => {
                   <SelectItem value="100">100 cards per day</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-1 dark:text-gray-400">
                 Maximum number of cards to review each day
               </p>
             </div>
             
             <div className="space-y-1">
-              <Label htmlFor="newCardLimit">New Card Limit</Label>
+              <Label htmlFor="newCardLimit" className="dark:text-white">New Card Limit</Label>
               <Select 
                 value={formData.newCardLimit.toString()} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, newCardLimit: parseInt(value) }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                   <SelectValue placeholder="Select new card limit" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
                   <SelectItem value="5">5 new cards per day</SelectItem>
                   <SelectItem value="10">10 new cards per day</SelectItem>
                   <SelectItem value="15">15 new cards per day</SelectItem>
@@ -242,22 +298,45 @@ const SettingsPage = () => {
                   <SelectItem value="30">30 new cards per day</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-1 dark:text-gray-400">
                 Maximum number of new cards to introduce each day
               </p>
             </div>
             
             <div className="space-y-1">
-              <Label htmlFor="reminderTime">Daily Reminder Time</Label>
+              <Label htmlFor="reminderTime" className="dark:text-white">Daily Reminder Time</Label>
               <Input
                 id="reminderTime"
                 name="reminderTime"
                 type="time"
                 value={formData.reminderTime}
                 onChange={handleChange}
+                className="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-1 dark:text-gray-400">
                 When to receive daily study reminders (if enabled in your browser)
+              </p>
+            </div>
+            
+            <div className="space-y-1">
+              <Label htmlFor="dataRetentionDays" className="dark:text-white">Data Retention (Days)</Label>
+              <Select 
+                value={formData.dataRetentionDays.toString()} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, dataRetentionDays: parseInt(value) }))}
+              >
+                <SelectTrigger className="dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                  <SelectValue placeholder="Select data retention period" />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
+                  <SelectItem value="7">7 days</SelectItem>
+                  <SelectItem value="15">15 days</SelectItem>
+                  <SelectItem value="30">30 days</SelectItem>
+                  <SelectItem value="60">60 days</SelectItem>
+                  <SelectItem value="90">90 days</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1 dark:text-gray-400">
+                How long to keep detailed review history data
               </p>
             </div>
           </CardContent>
@@ -272,39 +351,39 @@ const SettingsPage = () => {
           </CardFooter>
         </Card>
         
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 dark:text-white">
               <FileJson className="h-5 w-5 text-brand-purple" />
               Data Management
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="dark:text-gray-400">
               Export, import, or reset your flashcard data
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-medium flex items-center gap-2">
+              <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <h3 className="font-medium flex items-center gap-2 dark:text-white">
                   <Download className="h-4 w-4" /> Export Data
                 </h3>
-                <p className="text-sm text-muted-foreground my-2">
+                <p className="text-sm text-muted-foreground my-2 dark:text-gray-400">
                   Download all your flashcards and progress as a JSON file
                 </p>
                 <Button 
                   variant="outline" 
-                  className="w-full"
+                  className="w-full dark:bg-gray-800 dark:text-white dark:hover:bg-gray-900"
                   onClick={handleExportData}
                 >
                   Export to JSON
                 </Button>
               </div>
               
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-medium flex items-center gap-2">
+              <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <h3 className="font-medium flex items-center gap-2 dark:text-white">
                   <Upload className="h-4 w-4" /> Import Data
                 </h3>
-                <p className="text-sm text-muted-foreground my-2">
+                <p className="text-sm text-muted-foreground my-2 dark:text-gray-400">
                   Restore from a previously exported backup file
                 </p>
                 <div className="flex items-center gap-2">
@@ -315,10 +394,10 @@ const SettingsPage = () => {
                     className="hidden"
                     onChange={handleImportData}
                   />
-                  <label htmlFor="importFile">
+                  <label htmlFor="importFile" className="w-full">
                     <Button 
                       variant="outline" 
-                      className="w-full" 
+                      className="w-full dark:bg-gray-800 dark:text-white dark:hover:bg-gray-900" 
                       onClick={() => document.getElementById("importFile")?.click()}
                     >
                       Import from JSON
@@ -330,20 +409,20 @@ const SettingsPage = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
             <CardTitle className="text-red-500 flex items-center gap-2">
               <Trash2 className="h-5 w-5" />
               Danger Zone
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="dark:text-gray-400">
               Irreversible actions that will delete your data
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="p-4 border border-red-200 bg-red-50 rounded-lg">
-              <h3 className="font-medium">Reset All Progress</h3>
-              <p className="text-sm text-muted-foreground my-2">
+            <div className="p-4 border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 rounded-lg">
+              <h3 className="font-medium dark:text-white">Reset All Progress</h3>
+              <p className="text-sm text-muted-foreground my-2 dark:text-gray-400">
                 This will delete all your flashcards, decks, and progress statistics. This action cannot be undone.
               </p>
               
@@ -354,16 +433,16 @@ const SettingsPage = () => {
                     Reset All Data
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent className="dark:bg-gray-800 dark:border-gray-700">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
+                    <AlertDialogTitle className="dark:text-white">Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription className="dark:text-gray-400">
                       This action will permanently delete all your flashcards, decks, and learning progress.
                       This action cannot be reversed.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel className="dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">Cancel</AlertDialogCancel>
                     <AlertDialogAction 
                       onClick={handleResetData}
                       className="bg-red-500 text-white hover:bg-red-600"

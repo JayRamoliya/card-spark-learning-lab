@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -48,6 +47,7 @@ interface AppState {
     newCardLimit: number;
     reminderTime: string;
     userName: string;
+    dataRetentionDays: number;
   };
   currentDeck?: string;
   reviewSession: {
@@ -110,7 +110,8 @@ const initialState = {
     dailyCardLimit: 20,
     newCardLimit: 10,
     reminderTime: '19:00',
-    userName: 'Learner'
+    userName: 'Learner',
+    dataRetentionDays: 15  // New setting for data retention
   },
   reviewSession: {
     cards: [],
@@ -201,7 +202,7 @@ export const useStore = create<AppState>()(
       },
       
       reviewCard: (cardId, performance) => {
-        const { flashcards } = get();
+        const { flashcards, settings } = get();
         const card = flashcards.find(c => c.id === cardId);
         
         if (!card) return;
@@ -231,7 +232,7 @@ export const useStore = create<AppState>()(
             lastReviewDate: today,
             // Update streak here based on dates
             streakDays: getUpdatedStreak(state.stats.lastReviewDate, state.stats.streakDays),
-            history: updateReviewHistory(state.stats.history, performance)
+            history: updateReviewHistory(state.stats.history, performance, settings.dataRetentionDays)
           }
         }));
       },
@@ -298,15 +299,23 @@ function getUpdatedStreak(lastDate?: Date, currentStreak = 0): number {
   }
 }
 
-// Helper for review history
-function updateReviewHistory(history: any[], performance: FlashcardDifficulty) {
+// Helper for review history with data retention
+function updateReviewHistory(history: any[], performance: FlashcardDifficulty, retentionDays = 15) {
   const today = new Date().toISOString().split('T')[0];
   const isCorrect = performance >= 3; // Consider 3+ as "correct"
   
-  const existingEntry = history.find(h => h.date === today);
+  // Apply data retention - keep only the last X days
+  const oldestDate = new Date();
+  oldestDate.setDate(oldestDate.getDate() - retentionDays);
+  const oldestDateStr = oldestDate.toISOString().split('T')[0];
+  
+  // Filter history to only keep data within retention period
+  const filteredHistory = history.filter(h => h.date >= oldestDateStr);
+  
+  const existingEntry = filteredHistory.find(h => h.date === today);
   
   if (existingEntry) {
-    return history.map(h => 
+    return filteredHistory.map(h => 
       h.date === today 
         ? { 
             ...h, 
@@ -317,7 +326,7 @@ function updateReviewHistory(history: any[], performance: FlashcardDifficulty) {
     );
   } else {
     return [
-      ...history,
+      ...filteredHistory,
       {
         date: today,
         reviewed: 1,
