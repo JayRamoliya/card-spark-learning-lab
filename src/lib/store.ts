@@ -73,6 +73,8 @@ interface AppState {
   updateSettings: (settings: Partial<AppState['settings']>) => void;
   updateStats: (stats: Partial<AppState['stats']>) => void;
   resetProgress: () => void;
+  
+  setCustomReviewDate: (cardId: string, date: Date) => void;
 }
 
 // Helper function to calculate next review date
@@ -269,6 +271,14 @@ export const useStore = create<AppState>()(
       resetProgress: () => set((state) => ({
         ...initialState,
         settings: state.settings // Preserve user settings
+      })),
+      
+      setCustomReviewDate: (cardId: string, date: Date) => set((state) => ({
+        flashcards: state.flashcards.map(card => 
+          card.id === cardId 
+            ? { ...card, nextReview: date } 
+            : card
+        )
       }))
     }),
     {

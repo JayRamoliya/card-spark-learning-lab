@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { useStore, FlashcardDifficulty } from "@/lib/store";
 import Layout from "@/components/Layout";
+import CustomDatePicker from "@/components/CustomDatePicker";
 import { 
   CircleSlash, 
   Clock, 
@@ -26,6 +26,7 @@ import {
   Smile,
   Award,
   ThumbsUp,
+  CalendarDays,
 } from "lucide-react";
 
 const DIFFICULTY_OPTIONS = [
@@ -44,7 +45,8 @@ const ReviewPage = () => {
     flipCard, 
     reviewCard, 
     nextCard, 
-    startReviewSession 
+    startReviewSession,
+    setCustomReviewDate
   } = useStore();
   
   const [isFinished, setIsFinished] = useState(false);
@@ -52,6 +54,7 @@ const ReviewPage = () => {
     totalReviewed: 0,
     correct: 0,
   });
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
   
   // Calculate progress
   const progress = reviewSession.cards.length > 0
@@ -91,6 +94,14 @@ const ReviewPage = () => {
     if (!currentCardId) return;
     
     reviewCard(currentCardId, difficulty);
+    nextCard();
+  };
+  
+  const handleCustomDateChange = (date: Date) => {
+    if (!currentCardId) return;
+    
+    setCustomReviewDate(currentCardId, date);
+    setShowCustomDatePicker(false);
     nextCard();
   };
   
@@ -207,55 +218,88 @@ const ReviewPage = () => {
         
         <Card className="flex flex-col md:min-h-[400px] justify-between">
           <CardContent className="flex flex-col items-center justify-center flex-1 p-6">
-            <div 
-              className={`w-full h-full flex flex-col items-center justify-center rounded-lg p-8 transition-all duration-300 ${
-                reviewSession.showAnswer ? "bg-brand-lightPurple" : "bg-white border"
-              }`}
-              onClick={() => flipCard()}
-            >
-              {!reviewSession.showAnswer ? (
-                <div className="text-center">
-                  <h3 className="text-xl font-medium mb-8">{currentCard.front}</h3>
-                  <p className="text-sm text-muted-foreground">Tap to reveal answer</p>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <p className="text-sm font-medium text-muted-foreground mb-2">ANSWER</p>
-                  <h3 className="text-xl font-medium mb-8">{currentCard.back}</h3>
-                </div>
-              )}
-            </div>
+            {showCustomDatePicker ? (
+              <div className="w-full p-6">
+                <h3 className="text-lg font-medium mb-4">Set Custom Review Date</h3>
+                <CustomDatePicker
+                  initialDate={currentCard.nextReview}
+                  onDateChange={handleCustomDateChange}
+                  label="When would you like to review this card again?"
+                />
+                <Button 
+                  variant="outline" 
+                  className="mt-4 w-full"
+                  onClick={() => setShowCustomDatePicker(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <div 
+                className={`w-full h-full flex flex-col items-center justify-center rounded-lg p-8 transition-all duration-300 ${
+                  reviewSession.showAnswer ? "bg-brand-lightPurple" : "bg-white dark:bg-gray-800 border"
+                }`}
+                onClick={() => flipCard()}
+              >
+                {!reviewSession.showAnswer ? (
+                  <div className="text-center">
+                    <h3 className="text-xl font-medium mb-8">{currentCard.front}</h3>
+                    <p className="text-sm text-muted-foreground">Tap to reveal answer</p>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-muted-foreground mb-2">ANSWER</p>
+                    <h3 className="text-xl font-medium mb-8">{currentCard.back}</h3>
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
           
           <CardFooter className="flex flex-col gap-4 border-t p-6">
-            <p className="text-sm text-center text-muted-foreground w-full">
-              {reviewSession.showAnswer 
-                ? "How well did you know this?" 
-                : "Tap the card to see the answer"}
-            </p>
-            
-            {reviewSession.showAnswer && (
-              <div className="flex flex-wrap justify-center gap-2">
-                {DIFFICULTY_OPTIONS.map((option) => {
-                  const Icon = option.icon;
-                  
-                  return (
+            {!showCustomDatePicker && (
+              <>
+                <p className="text-sm text-center text-muted-foreground w-full">
+                  {reviewSession.showAnswer 
+                    ? "How well did you know this?" 
+                    : "Tap the card to see the answer"}
+                </p>
+                
+                {reviewSession.showAnswer && (
+                  <>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {DIFFICULTY_OPTIONS.map((option) => {
+                        const Icon = option.icon;
+                        
+                        return (
+                          <Button
+                            key={option.value}
+                            variant="outline"
+                            className={`flex flex-col items-center gap-1 h-auto py-2 min-w-[80px] ${
+                              option.value === 3 ? "border-yellow-500" : ""
+                            }`}
+                            onClick={() => handleRate(option.value as FlashcardDifficulty)}
+                          >
+                            <div className={`w-8 h-8 rounded-full ${option.color} flex items-center justify-center`}>
+                              <Icon className="h-5 w-5 text-white" />
+                            </div>
+                            <span className="text-xs">{option.label}</span>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    
                     <Button
-                      key={option.value}
                       variant="outline"
-                      className={`flex flex-col items-center gap-1 h-auto py-2 min-w-[80px] ${
-                        option.value === 3 ? "border-yellow-500" : ""
-                      }`}
-                      onClick={() => handleRate(option.value as FlashcardDifficulty)}
+                      className="flex items-center gap-2 mt-2"
+                      onClick={() => setShowCustomDatePicker(true)}
                     >
-                      <div className={`w-8 h-8 rounded-full ${option.color} flex items-center justify-center`}>
-                        <Icon className="h-5 w-5 text-white" />
-                      </div>
-                      <span className="text-xs">{option.label}</span>
+                      <CalendarDays className="h-4 w-4" />
+                      Set Custom Date
                     </Button>
-                  );
-                })}
-              </div>
+                  </>
+                )}
+              </>
             )}
             
             <div className="flex justify-between w-full pt-2">
@@ -272,7 +316,9 @@ const ReviewPage = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => {
-                  if (reviewSession.showAnswer) {
+                  if (showCustomDatePicker) {
+                    setShowCustomDatePicker(false);
+                  } else if (reviewSession.showAnswer) {
                     nextCard();
                   } else {
                     flipCard();
