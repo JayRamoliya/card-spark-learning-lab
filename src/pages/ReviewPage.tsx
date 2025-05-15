@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -220,11 +221,12 @@ const ReviewPage = () => {
           <CardContent className="flex flex-col items-center justify-center flex-1 p-6">
             {showCustomDatePicker ? (
               <div className="w-full p-6">
-                <h3 className="text-lg font-medium mb-4">Set Custom Review Date</h3>
+                <h3 className="text-lg font-medium mb-4">Set Custom Review Date & Time</h3>
                 <CustomDatePicker
                   initialDate={currentCard.nextReview}
                   onDateChange={handleCustomDateChange}
                   label="When would you like to review this card again?"
+                  showTimeSelect={true}
                 />
                 <Button 
                   variant="outline" 
@@ -295,7 +297,7 @@ const ReviewPage = () => {
                       onClick={() => setShowCustomDatePicker(true)}
                     >
                       <CalendarDays className="h-4 w-4" />
-                      Set Custom Date
+                      Set Custom Date & Time
                     </Button>
                   </>
                 )}
