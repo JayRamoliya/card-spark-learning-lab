@@ -7,7 +7,7 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
-import { LineChart, BarChart, PieChart } from "@/components/ui/chart";
+import { LineChart, BarChart, PieChart } from "@/components/charts";
 import Layout from "@/components/Layout";
 import {
   Select,
